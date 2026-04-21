@@ -56,3 +56,28 @@ Untuk memverifikasi optimasi query secara mandiri, jalankan:
 ```bash
 docker-compose exec web python run_demo.py
 ```
+
+Hasil Latihan Optimisasi DB
+
+Query Optimization (Baseline)
+Optimasi awal pada Course.objects.for_listing() menggunakan select_related.
+Scenario N+1: 3 Queries
+Scenario Optimized: 1 Query
+Hasil: Efisiensi beban database meningkat 66%.
+
+Database Indexing
+
+Untuk memastikan performa tetap stabil pada data skala besar, kami menerapkan indexing pada courses/models.py:
+Single Index: db_index=True pada kolom title (Course).
+Composite Index: idx_course_inst_cat pada kolom instructor dan category.
+Meta Index: idx_category_name pada tabel Category.
+
+Perintah Berguna
+
+Akses Dashboard Silk: http://localhost:8000/silk/
+Membuat Superuser: docker-compose exec web python manage.py createsuperuser
+Menjalankan Script Demo: docker-compose exec web python run_demo.py
+
+![Summary](silk-summary.png)
+![Baseline](silk-baseline.png)
+![Optimized](silk-optimized.png)

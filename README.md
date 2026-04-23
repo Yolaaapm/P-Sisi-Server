@@ -81,3 +81,8 @@ Menjalankan Script Demo: docker-compose exec web python run_demo.py
 ![Summary](silk-summary.png)
 ![Baseline](silk-baseline.png)
 ![Optimized](silk-optimized.png)
+
+Progress 3: Simple LMS - REST API & Authentication System
+![Register](register.png)
+![Sign-In](login.png)
+![Auth-Me](auth-me.png)

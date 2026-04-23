@@ -31,13 +31,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'silk',      # Tambahkan ini untuk Modul 5 (Profiling)
-    'courses',   # App kamu
+    'silk',      
+    'courses', 
+    'ninja_simple_jwt',  
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'silk.middleware.SilkyMiddleware', # Tambahkan ini di posisi atas untuk mencatat query
+    'silk.middleware.SilkyMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

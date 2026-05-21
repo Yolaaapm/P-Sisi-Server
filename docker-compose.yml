@@ -1,32 +1,123 @@
 version: "3.8"
 
 services:
+  # 1. Database PostgreSQL (Layanan Lama)
   db:
-    image: postgres:15
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
+    image: postgres:15-alpine
+    container_name: simple-lms-db
     environment:
       - POSTGRES_DB=lms_db
       - POSTGRES_USER=lms_user
       - POSTGRES_PASSWORD=lms_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
     ports:
       - "5432:5432"
 
+  # 2. Redis Cache Service (Layanan Baru)
+  redis:
+    image: redis:7-alpine
+    container_name: simple-lms-redis
+    ports:
+      - "6379:6379"
+
+  # 3. NoSQL MongoDB Service (Layanan Baru)
+  mongodb:
+    image: mongo:6-jammy
+    container_name: simple-lms-mongo
+    environment:
+      - MONGO_INITDB_DATABASE=lms_logs
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  # 4. RabbitMQ Message Broker Service (Layanan Baru)
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: simple-lms-mq
+    ports:
+      - "5672:5672"
+      - "15672:15672" # Management Web Dashboard
+
+  # 5. Django Web Application Service (Layanan Lama - Diperbarui)
   web:
     build: .
+    container_name: simple-lms-web
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app
     ports:
       - "8000:8000"
     environment:
+      # Tetap mempertahankan variabel koneksi database lama kamu
       - DB_NAME=lms_db
       - DB_USER=lms_user
       - DB_PASS=lms_password
       - DB_HOST=db
       - DB_PORT=5432
+      # Tambahan variabel koneksi layanan baru
+      - REDIS_URL=redis://redis:6379/0
+      - MONGO_URL=mongodb://mongodb:27017/
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
     depends_on:
       - db
+      - redis
+      - mongodb
+      - rabbitmq
+
+  # 6. Celery Worker (Layanan Baru)
+  celery-worker:
+    build: .
+    container_name: simple-lms-worker
+    command: celery -A config worker --loglevel=info
+    volumes:
+      - .:/app
+    environment:
+      - DB_NAME=lms_db
+      - DB_USER=lms_user
+      - DB_PASS=lms_password
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - MONGO_URL=mongodb://mongodb:27017/
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+    depends_on:
+      - rabbitmq
+      - db
+
+  # 7. Celery Beat Scheduler (Layanan Baru)
+  celery-beat:
+    build: .
+    container_name: simple-lms-beat
+    command: celery -A config beat --loglevel=info
+    volumes:
+      - .:/app
+    environment:
+      - DB_NAME=lms_db
+      - DB_USER=lms_user
+      - DB_PASS=lms_password
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - MONGO_URL=mongodb://mongodb:27017/
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+    depends_on:
+      - rabbitmq
+      - db
+
+  # 8. Celery Flower Dashboard (Layanan Baru)
+  flower:
+    image: mher/flower:2.0
+    container_name: simple-lms-flower
+    command: celery -A config flower --port=5555
+    environment:
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+    ports:
+      - "5555:5555"
+    depends_on:
+      - rabbitmq
 
 volumes:
   postgres_data:
+  mongodb_data:

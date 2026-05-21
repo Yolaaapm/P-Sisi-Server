@@ -34,6 +34,8 @@ INSTALLED_APPS = [
     'silk',      
     'courses', 
     'ninja_simple_jwt',  
+    'django_celery_results',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -107,7 +109,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Jakarta'
 
 USE_I18N = True
 
@@ -124,6 +126,42 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
 # --- KONFIGURASI DJANGO SILK (MODUL 5) ---
 SILKY_PYTHON_PROFILER = True
 SILKY_INTERCEPT_PERCENT = 100
+
+
+# ==========================================
+#      PROGRESS 4: ADVANCED CONFIGURATION
+# ==========================================
+
+# 1. REDIS CACHING CONFIGURATION
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.environ.get('REDIS_URL', 'redis://redis:6379/0'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+
+# 2. CELERY ASYNCHRONOUS TASKS CONFIGURATION
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'amqp://guest:guest@rabbitmq:5672//')
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Jakarta'
+
+# Celery Beat Schedule (Scheduled Task)
+CELERY_BEAT_SCHEDULE = {
+    'update-course-statistics-every-hour': {
+        'task': 'courses.tasks.update_course_statistics',
+        'schedule': 3600.0,  # Berjalan otomatis setiap 1 jam sekali
+    },
+}
+
+# 3. MONGODB LOGS & ANALYTICS CONNECTION
+MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://mongodb:27017/')
